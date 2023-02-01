@@ -1,0 +1,60 @@
+#!/command/with-contenv bash
+
+create_folder(){
+  if [ ! -d $1 ]; then
+    echo "creating folder $1"
+    mkdir -p $1
+  fi
+}
+
+echo "Try set Time zone"
+if [ -n "${TZ}" ]; then
+  zone="/usr/share/zoneinfo/${TZ}"
+  if [ -f $zone ]; then
+    echo "Setting timezone to ${TZ}"
+    cp $zone /etc/localtime
+    echo $TZ > /etc/Timezone
+  fi
+fi
+
+echo "Set default config file"
+create_folder "/config"
+if [ ! -f /config/smb.conf ]; then
+  cp /etc/samba/smb.conf /config/smb.conf
+fi
+
+### user: add a user
+# Arguments:
+#   name) for user
+#   password) for user
+#   id) for user
+#   group) for user
+#   gid) for group
+# Return: user added to container
+user() { local name="$1" passwd="$2" id="${3:-""}" group="${4:-""}" \
+                gid="${5:-""}"
+    [[ $group ]] && { grep -q $group /etc/group || addgroup ${gid:+--gid $gid }$group; }
+    grep -q $name /etc/passwd || adduser -D -H ${group:+-G $group} ${id:+-u $id} $name
+    echo "name=$name,passwd=$passwd,id=$id,group=$group,gid=$gid"
+    echo -e "$passwd\n$passwd" | smbpasswd -s -a $name
+    # usermod -a -G samba $name
+}
+
+echo "Add users"
+if [ -n "${USERS}" ]; then
+  echo "Adding $USERS"
+  IFS='|' read -ra ADDR <<< "$USERS"
+  for i in "${ADDR[@]}"; do
+    # user $(sed 's/^/"/; s/;/" "/g; s/$/"/'<<< $i)
+        user $(sed 's/;/ /g;'<<< $i)
+  done
+fi
+echo "Add folders"
+if [ -n "${FOLDERS}" ]; then
+  echo "Adding $FOLDERS"
+  IFS=';' read -ra ADDR <<< "$FOLDERS"
+  for i in "${ADDR[@]}"; do
+    # user $(sed 's/^/"/; s/;/" "/g; s/$/"/'<<< $i)
+        create_folder $i
+  done
+fi
