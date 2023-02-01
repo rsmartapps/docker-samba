@@ -16,8 +16,8 @@ env:
   REGISTRY: docker.io
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
-  USER_NAME: ${{ secrets.DOCKER_USER }}
-  PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  USER_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+  PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
 
 jobs:
@@ -32,8 +32,11 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
