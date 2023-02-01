@@ -74,7 +74,7 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: "${{ env.DOCKER_IMAGE }}:latest"
+          tags: 0.3.0
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -91,4 +91,4 @@ jobs:
           COSIGN_EXPERIMENTAL: "true"
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
-        run: echo "${{ env.DOCKER_IMAGE }}:latest" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+        run: echo "${{ env.DOCKER_IMAGE }}:0.3.0" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
